@@ -27,7 +27,7 @@ jobs:
         with:
           gradle-version: 8.14
 
-      - name: Show project files
+      - name: Show project files before build
         run: |
           pwd
           ls -la
@@ -36,6 +36,14 @@ jobs:
       - name: Build addon
         run: |
           gradle build --no-daemon --stacktrace --info 2>&1 | tee gradle-build.log
+
+      - name: Show build outputs
+        if: always()
+        run: |
+          echo "=== All jar files ==="
+          find . -type f -name "*.jar" -print
+          echo "=== build folders ==="
+          find . -type d -name "libs" -print
 
       - name: Upload Gradle log
         if: always()
@@ -46,9 +54,9 @@ jobs:
           if-no-files-found: warn
 
       - name: Upload built jar
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: kidz-jade-tiers-addon
-          path: build/libs/*.jar
+          path: |
+            **/build/libs/*.jar
           if-no-files-found: error
