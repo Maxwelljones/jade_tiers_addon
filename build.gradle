@@ -39,6 +39,12 @@ dependencies {
 
     compileOnly "curse.maven:jade-324717:${jade_file_id}"
     runtimeOnly "curse.maven:jade-324717:${jade_file_id}"
+
+    compileOnly "curse.maven:silent-gear-297039:${silentgear_file_id}"
+    runtimeOnly "curse.maven:silent-gear-297039:${silentgear_file_id}"
+
+    compileOnly "curse.maven:silent-lib-242998:${silentlib_file_id}"
+    runtimeOnly "curse.maven:silent-lib-242998:${silentlib_file_id}"
 }
 
 runs {
