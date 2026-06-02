@@ -25,18 +25,28 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: 8.10.2
+          gradle-version: 8.14
 
       - name: Show project files
         run: |
           pwd
           ls -la
-          find . -maxdepth 3 -type f | sort
+          find . -maxdepth 5 -type f | sort
 
       - name: Build addon
-        run: gradle build --no-daemon --stacktrace --info
+        run: |
+          gradle build --no-daemon --stacktrace --info 2>&1 | tee gradle-build.log
+
+      - name: Upload Gradle log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: gradle-build.log
+          if-no-files-found: warn
 
       - name: Upload built jar
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: kidz-jade-tiers-addon
