@@ -3,107 +3,144 @@ package com.maxwelljonez.silentgearjadetiers;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.silentchaos512.gear.api.material.Material;
+import net.silentchaos512.gear.api.property.HarvestTier;
+import net.silentchaos512.gear.gear.material.MaterialInstance;
+import net.silentchaos512.gear.setup.SgRegistries;
+import net.silentchaos512.gear.setup.gear.GearProperties;
+import net.silentchaos512.gear.setup.gear.GearTypes;
+import net.silentchaos512.gear.setup.gear.PartTypes;
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IBlockComponentProvider;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
     INSTANCE;
 
-    private record Tier(int level, String name, String incorrectTagPath, int color) {
-        TagKey<Block> incorrectTag() {
-            return TagKey.create(
-                    Registries.BLOCK,
-                    ResourceLocation.fromNamespaceAndPath("silentgear", incorrectTagPath)
-            );
+    private record Tier(
+            ResourceLocation materialId,
+            TagKey<Block> incorrectTag,
+            String levelHint,
+            double sortLevel,
+            String name,
+            int color,
+            boolean preferredNameForTag
+    ) {
+        String label() {
+            boolean showNumeric = SilentGearJadeTiersConfig.SHOW_NUMERIC_LEVEL.get();
+            boolean showName = SilentGearJadeTiersConfig.SHOW_TIER_NAME.get();
+
+            if (showNumeric && showName) {
+                return "Tier " + formattedLevelHint() + " - " + name;
+            }
+
+            if (showNumeric) {
+                return "Tier " + formattedLevelHint();
+            }
+
+            if (showName) {
+                return name;
+            }
+
+            return "";
         }
 
-        String label() {
-            return String.format("Tier %02d - %s", level, name);
+        private String formattedLevelHint() {
+            try {
+                int value = Integer.parseInt(levelHint);
+                if (value >= 0 && value < 10) {
+                    return "0" + value;
+                }
+                return Integer.toString(value);
+            } catch (NumberFormatException ignored) {
+                return levelHint;
+            }
         }
     }
 
-    /*
-     * Display logic reads the real Silent Gear mining authority tags:
-     *
-     *   silentgear:incorrect_for_wood_tools
-     *   silentgear:incorrect_for_stone_tools
-     *   silentgear:incorrect_for_copper_tools
-     *   ...
-     *
-     * A block requires tier N when:
-     *
-     *   - it is blocked by the previous lower tier
-     *   - it is no longer blocked by tier N
-     *
-     * Example:
-     *
-     *   Redstone is in incorrect_for_zinc_tools
-     *   Redstone is not in incorrect_for_gold_tools
-     *   => Required: Tier 06 - Gold
-     */
-    private static final List<Tier> TIERS = List.of(
-            new Tier(0, "Wood / Flint / Bone", "incorrect_for_wood_tools", 0x9A6A35),
-            new Tier(1, "Stone", "incorrect_for_stone_tools", 0xA0A0A0),
-            new Tier(2, "Copper", "incorrect_for_copper_tools", 0xD87945),
-            new Tier(3, "Iron", "incorrect_for_iron_tools", 0xD8D8D8),
-            new Tier(4, "Andesite", "incorrect_for_andesite_tools", 0xA08F79),
-            new Tier(5, "Zinc", "incorrect_for_zinc_tools", 0xC7D7D9),
-            new Tier(6, "Gold", "incorrect_for_gold_tools", 0xFFD84A),
-            new Tier(7, "Rose Gold", "incorrect_for_rose_gold_tools", 0xF0A080),
-            new Tier(8, "Lapis", "incorrect_for_lapis_tools", 0x315CCF),
-            new Tier(9, "Brass", "incorrect_for_brass_tools", 0xD6A83A),
-            new Tier(10, "Electrum", "incorrect_for_electrum_tools", 0xFFE36E),
-            new Tier(11, "Osmium", "incorrect_for_osmium_tools", 0x8AA6B8),
-            new Tier(12, "Steel", "incorrect_for_steel_tools", 0x666A70),
-            new Tier(13, "Obsidian", "incorrect_for_obsidian_tools", 0x332044),
-            new Tier(14, "Bronze", "incorrect_for_bronze_tools", 0xB2743A),
-            new Tier(15, "Diamond", "incorrect_for_diamond_tools", 0x55FFFF),
-            new Tier(16, "Refined Obsidian", "incorrect_for_refined_obsidian_tools", 0x6A3FA0),
-            new Tier(17, "Refined Glowstone", "incorrect_for_refined_glowstone_tools", 0xFFD35A),
-            new Tier(18, "Netherite", "incorrect_for_netherite_tools", 0x4A424A),
-            new Tier(19, "Uranium", "incorrect_for_uranium_tools", 0x6F9E4A),
-            new Tier(20, "Yellorium", "incorrect_for_yellorium_tools", 0xC9D83E),
-            new Tier(21, "Bort", "incorrect_for_bort_tools", 0x53616D),
-            new Tier(22, "Blutonium", "incorrect_for_blutonium_tools", 0x3B83D8),
-            new Tier(23, "Crimson", "incorrect_for_crimson_tools", 0xB32626),
-            new Tier(24, "Desh", "incorrect_for_desh_tools", 0x8B6FFF),
-            new Tier(25, "Todabonium", "incorrect_for_todabonium_tools", 0xC06BFF)
-    );
-
     @Override
     public void appendTooltip(ITooltip tooltip, BlockAccessor accessor, IPluginConfig config) {
+        if (!SilentGearJadeTiersConfig.SHOW_REQUIRED_TIER.get()) {
+            return;
+        }
+
         BlockState state = accessor.getBlockState();
 
-        Tier required = findRequiredTier(state);
+        if (!shouldShowForHeldItem(accessor, state)) {
+            return;
+        }
+
+        List<Tier> tiers = buildRuntimeTierList();
+        if (tiers.size() < 2) {
+            return;
+        }
+
+        Tier required = findRequiredTier(state, tiers);
         if (required == null) {
             return;
         }
 
-        tooltip.add(
-                Component.literal("⛏ Required: ")
-                        .withStyle(ChatFormatting.GRAY)
-                        .append(Component.literal(required.label()).withStyle(style -> style.withColor(required.color())))
-        );
+        MutableComponent line = Component.empty();
+
+        if (SilentGearJadeTiersConfig.SHOW_CROSSED_PICKAXE_ICON.get()) {
+            line.append(Component.literal("⛏").withStyle(style -> style.withColor(required.color())));
+            line.append(Component.literal(" ✕ ").withStyle(ChatFormatting.RED));
+        }
+
+        line.append(Component.literal("Required: ").withStyle(ChatFormatting.GRAY));
+
+        String label = required.label();
+        if (!label.isBlank()) {
+            line.append(Component.literal(label).withStyle(style -> style.withColor(required.color())));
+        }
+
+        tooltip.add(line);
     }
 
-    private static Tier findRequiredTier(BlockState state) {
-        boolean blockedByPreviousTier = state.is(TIERS.get(0).incorrectTag());
+    private static boolean shouldShowForHeldItem(BlockAccessor accessor, BlockState state) {
+        if (accessor.getPlayer() == null) {
+            return true;
+        }
 
-        // If wood-tier tools are not blocked, this block is not part of the custom mining progression.
+        ItemStack held = accessor.getPlayer().getMainHandItem();
+
+        if (held.isEmpty()) {
+            return SilentGearJadeTiersConfig.SHOW_IF_HOLDING_NO_TOOL.get();
+        }
+
+        boolean correctTool = held.isCorrectToolForDrops(state);
+
+        if (correctTool) {
+            return SilentGearJadeTiersConfig.SHOW_IF_HOLDING_CORRECT_TOOL.get();
+        }
+
+        return SilentGearJadeTiersConfig.SHOW_IF_HOLDING_WRONG_TOOL.get();
+    }
+
+    private static Tier findRequiredTier(BlockState state, List<Tier> tiers) {
+        boolean blockedByPreviousTier = state.is(tiers.get(0).incorrectTag());
+
+        // If the lowest Silent Gear tier does not block this block, the block is not part
+        // of the custom Silent Gear mining progression chain.
         if (!blockedByPreviousTier) {
             return null;
         }
 
-        for (int i = 1; i < TIERS.size(); i++) {
-            Tier tier = TIERS.get(i);
+        for (int i = 1; i < tiers.size(); i++) {
+            Tier tier = tiers.get(i);
             boolean blockedByCurrentTier = state.is(tier.incorrectTag());
 
             if (blockedByPreviousTier && !blockedByCurrentTier) {
@@ -113,8 +150,171 @@ public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
             blockedByPreviousTier = blockedByCurrentTier;
         }
 
-        // If the block is still blocked by every known tier, do not display a misleading tier.
+        // Still blocked by every known tier. Do not display misleading data.
         return null;
+    }
+
+    private static List<Tier> buildRuntimeTierList() {
+        Map<ResourceLocation, Tier> tiersByIncorrectTag = new LinkedHashMap<>();
+
+        for (Map.Entry<ResourceLocation, Material> entry : SgRegistries.MATERIAL.entrySet()) {
+            ResourceLocation materialId = entry.getKey();
+            Material material = entry.getValue();
+
+            Tier tier = tierFromMaterial(materialId, material);
+            if (tier == null) {
+                continue;
+            }
+
+            ResourceLocation tagId = tier.incorrectTag().location();
+            Tier existing = tiersByIncorrectTag.get(tagId);
+
+            if (existing == null || shouldReplaceExistingTier(existing, tier)) {
+                tiersByIncorrectTag.put(tagId, tier);
+            }
+        }
+
+        List<Tier> tiers = new ArrayList<>(tiersByIncorrectTag.values());
+
+        tiers.sort(
+                Comparator.comparingDouble(Tier::sortLevel)
+                        .thenComparing(tier -> tier.materialId().toString())
+        );
+
+        return tiers;
+    }
+
+    private static Tier tierFromMaterial(ResourceLocation materialId, Material material) {
+        try {
+            MaterialInstance instance = MaterialInstance.of(material);
+
+            HarvestTier harvestTier = instance.getProperty(
+                    PartTypes.MAIN.get(),
+                    GearProperties.HARVEST_TIER.get()
+            );
+
+            if (harvestTier == null) {
+                return null;
+            }
+
+            TagKey<Block> incorrectTag = harvestTier.incorrectForTool();
+            if (incorrectTag == null) {
+                return null;
+            }
+
+            ResourceLocation tagId = incorrectTag.location();
+
+            // This addon targets Silent Gear's material-defined progression tags.
+            // It intentionally avoids vanilla minecraft:incorrect_for_* tags because those
+            // are not enough to express custom Silent Gear material progression.
+            if (!"silentgear".equals(tagId.getNamespace())) {
+                return null;
+            }
+
+            if (!tagId.getPath().startsWith("incorrect_for_") || !tagId.getPath().endsWith("_tools")) {
+                return null;
+            }
+
+            String levelHint = harvestTier.levelHint().orElse("").trim();
+            if (levelHint.isEmpty()) {
+                return null;
+            }
+
+            String materialName = instance.getSimpleName().getString();
+            if (materialName == null || materialName.isBlank()) {
+                materialName = prettifyMaterialId(materialId);
+            }
+
+            int color = safeMaterialColor(instance);
+
+            String expectedMaterialPath = expectedMaterialPathFromTag(tagId);
+            boolean preferred = materialId.getPath().equals(expectedMaterialPath);
+
+            return new Tier(
+                    materialId,
+                    incorrectTag,
+                    levelHint,
+                    parseLevelHint(levelHint),
+                    materialName,
+                    color,
+                    preferred
+            );
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private static boolean shouldReplaceExistingTier(Tier existing, Tier candidate) {
+        if (candidate.preferredNameForTag() && !existing.preferredNameForTag()) {
+            return true;
+        }
+
+        if (!candidate.preferredNameForTag() && existing.preferredNameForTag()) {
+            return false;
+        }
+
+        // Prefer same namespace as the tag if possible.
+        if ("silentgear".equals(candidate.materialId().getNamespace())
+                && !"silentgear".equals(existing.materialId().getNamespace())) {
+            return true;
+        }
+
+        return candidate.materialId().toString().compareTo(existing.materialId().toString()) < 0;
+    }
+
+    private static int safeMaterialColor(MaterialInstance instance) {
+        try {
+            return instance.getNameColor(PartTypes.MAIN.get(), GearTypes.PICKAXE.get()) & 0xFFFFFF;
+        } catch (Exception ignored) {
+            return 0xFFFFFF;
+        }
+    }
+
+    private static double parseLevelHint(String levelHint) {
+        try {
+            return Double.parseDouble(levelHint);
+        } catch (NumberFormatException ignored) {
+            return Double.MAX_VALUE;
+        }
+    }
+
+    private static String expectedMaterialPathFromTag(ResourceLocation tagId) {
+        String path = tagId.getPath();
+
+        if (path.startsWith("incorrect_for_")) {
+            path = path.substring("incorrect_for_".length());
+        }
+
+        if (path.endsWith("_tools")) {
+            path = path.substring(0, path.length() - "_tools".length());
+        }
+
+        return path;
+    }
+
+    private static String prettifyMaterialId(ResourceLocation materialId) {
+        String path = materialId.getPath().replace('_', ' ');
+        String[] words = path.split(" ");
+
+        StringBuilder result = new StringBuilder();
+
+        for (String word : words) {
+            if (word.isBlank()) {
+                continue;
+            }
+
+            if (!result.isEmpty()) {
+                result.append(' ');
+            }
+
+            result.append(Character.toUpperCase(word.charAt(0)));
+
+            if (word.length() > 1) {
+                result.append(word.substring(1));
+            }
+        }
+
+        return result.isEmpty() ? materialId.toString() : result.toString();
     }
 
     @Override
