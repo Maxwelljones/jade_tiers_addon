@@ -1,4 +1,4 @@
 {
-  "config.jade.plugin_kidz_jade_tiers.required_tier": "Tier de minage KidZ",
+  "config.jade.plugin_kidz_jade_tiers.required_tier": "Tier de minage",
   "kidz_jade_tiers.required": "Requis : %s"
 }
