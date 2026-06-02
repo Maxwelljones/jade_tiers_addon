@@ -102,9 +102,23 @@ public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
 
         line.append(Component.literal("Required: ").withStyle(ChatFormatting.GRAY));
 
-        String label = required.label();
-        if (!label.isBlank()) {
-            line.append(Component.literal(label).withStyle(style -> style.withColor(required.color())));
+        String label() {
+            boolean showNumeric = SilentGearJadeTiersConfig.SHOW_NUMERIC_LEVEL.get();
+            boolean showName = SilentGearJadeTiersConfig.SHOW_TIER_NAME.get();
+
+            if (showNumeric && showName) {
+                return "Tier " + formattedLevelHint() + " - " + name;
+            }
+
+            if (showNumeric) {
+                return "Tier " + formattedLevelHint();
+            }
+
+            if (showName) {
+                return name;
+            }
+
+            return "";
         }
 
         tooltip.add(line);
