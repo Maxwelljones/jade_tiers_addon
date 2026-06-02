@@ -35,7 +35,8 @@ jobs:
 
       - name: Build addon
         run: |
-          gradle clean jar build --no-daemon --stacktrace --info 2>&1 | tee gradle-build.log
+          set -o pipefail
+          gradle clean jar --no-daemon --stacktrace --info 2>&1 | tee gradle-build.log
 
       - name: Show build outputs
         if: always()
@@ -46,14 +47,12 @@ jobs:
           find . -path "*/build/*" -type f -print
 
       - name: Prepare artifacts
+        if: success()
         run: |
           mkdir -p artifacts
           find . -type f -path "*/build/libs/*.jar" -exec cp {} artifacts/ \;
           echo "=== Artifact folder ==="
           ls -la artifacts
-
-      - name: Verify artifacts
-        run: |
           test -n "$(find artifacts -type f -name '*.jar' -print -quit)" || (echo "No jar produced"; exit 1)
 
       - name: Upload Gradle log
@@ -65,6 +64,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Upload built jar
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: kidz-jade-tiers-addon
