@@ -1,0 +1,4 @@
+{
+  "config.jade.plugin_kidz_jade_tiers.required_tier": "KidZ Mining Tier",
+  "kidz_jade_tiers.required": "Required: %s"
+}
