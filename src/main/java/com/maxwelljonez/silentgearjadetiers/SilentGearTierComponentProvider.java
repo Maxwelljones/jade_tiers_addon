@@ -14,12 +14,15 @@ import snownee.jade.api.config.IPluginConfig;
 
 import java.util.List;
 
-public enum KidzTierComponentProvider implements IBlockComponentProvider {
+public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
     INSTANCE;
 
     private record Tier(int level, String name, String incorrectTagPath, int color) {
         TagKey<Block> incorrectTag() {
-            return TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath("silentgear", incorrectTagPath));
+            return TagKey.create(
+                    Registries.BLOCK,
+                    ResourceLocation.fromNamespaceAndPath("silentgear", incorrectTagPath)
+            );
         }
 
         String label() {
@@ -28,18 +31,22 @@ public enum KidzTierComponentProvider implements IBlockComponentProvider {
     }
 
     /*
-     * Display logic reads your real Silent Gear mining authority tags:
+     * Display logic reads the real Silent Gear mining authority tags:
+     *
      *   silentgear:incorrect_for_wood_tools
      *   silentgear:incorrect_for_stone_tools
      *   silentgear:incorrect_for_copper_tools
      *   ...
      *
      * A block requires tier N when:
+     *
      *   - it is blocked by the previous lower tier
      *   - it is no longer blocked by tier N
      *
      * Example:
-     *   Redstone in incorrect_for_zinc_tools but not in incorrect_for_gold_tools
+     *
+     *   Redstone is in incorrect_for_zinc_tools
+     *   Redstone is not in incorrect_for_gold_tools
      *   => Required: Tier 06 - Gold
      */
     private static final List<Tier> TIERS = List.of(
@@ -112,6 +119,6 @@ public enum KidzTierComponentProvider implements IBlockComponentProvider {
 
     @Override
     public ResourceLocation getUid() {
-        return KidzJadePlugin.REQUIRED_TIER;
+        return SilentGearJadePlugin.REQUIRED_TIER;
     }
 }
