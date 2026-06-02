@@ -6,9 +6,9 @@ license="MIT"
 modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
-authors="MaxwellJoneZ / KidZ 5"
+authors="MaxwellJoneZ"
 displayTest="IGNORE_SERVER_VERSION"
-description='''Adds one Jade tooltip line for KidZ 5 Silent Gear mining progression: Required KidZ Tier: XX - Material. Display only; does not change mining logic.'''
+description='''Adds a Jade tooltip line showing the required Silent Gear mining tier for blocks. Display only; does not change mining logic.'''
 
 [[dependencies.${mod_id}]]
 modId="neoforge"
@@ -23,3 +23,17 @@ type="required"
 versionRange="[15.0.0,)"
 ordering="AFTER"
 side="CLIENT"
+
+[[dependencies.${mod_id}]]
+modId="silentgear"
+type="required"
+versionRange="[4.2.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="silentlib"
+type="required"
+versionRange="[10.6.0,)"
+ordering="AFTER"
+side="BOTH"
