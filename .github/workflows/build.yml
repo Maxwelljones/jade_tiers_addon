@@ -52,6 +52,10 @@ jobs:
           echo "=== Artifact folder ==="
           ls -la artifacts
 
+      - name: Verify artifacts
+        run: |
+          test -n "$(find artifacts -type f -name '*.jar' -print -quit)" || (echo "No jar produced"; exit 1)
+
       - name: Upload Gradle log
         if: always()
         uses: actions/upload-artifact@v4
