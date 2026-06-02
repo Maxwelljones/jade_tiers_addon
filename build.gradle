@@ -19,12 +19,6 @@ java {
     withSourcesJar()
 }
 
-repositories {
-    maven { name = 'NeoForge'; url = 'https://maven.neoforged.net/releases' }
-    maven { name = 'CurseMaven'; url = 'https://cursemaven.com' }
-    mavenCentral()
-}
-
 dependencies {
     implementation "net.neoforged:neoforge:${neoforge_version}"
 
@@ -63,8 +57,4 @@ tasks.named('jar', Jar).configure {
     archiveBaseName = mod_id
     archiveVersion = mod_version
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
-
-tasks.named('build').configure {
-    dependsOn tasks.named('jar')
 }
