@@ -1,7 +1,6 @@
 package com.maxwelljonez.silentgearjadetiers;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -112,23 +111,10 @@ private record Tier(
 
         line.append(Component.literal("Required: ").withStyle(ChatFormatting.GRAY));
 
-        String label() {
-            boolean showNumeric = SilentGearJadeTiersConfig.SHOW_NUMERIC_LEVEL.get();
-            boolean showName = SilentGearJadeTiersConfig.SHOW_TIER_NAME.get();
+        String label = required.label();
 
-            if (showNumeric && showName) {
-                return "Tier " + formattedLevelHint() + " - " + name;
-            }
-
-            if (showNumeric) {
-                return "Tier " + formattedLevelHint();
-            }
-
-            if (showName) {
-                return name;
-            }
-
-            return "";
+        if (!label.isBlank()) {
+            line.append(Component.literal(label).withStyle(style -> style.withColor(required.color())));
         }
 
         tooltip.add(line);
@@ -208,67 +194,72 @@ private record Tier(
         return tiers;
     }
 
-        private static Tier tierFromMaterial(ResourceLocation materialId, Material material) {
+    private static Tier tierFromMaterial(ResourceLocation materialId, Material material) {
         try {
             MaterialInstance instance = MaterialInstance.of(material);
-
+    
             HarvestTier harvestTier = instance.getProperty(
-                PartTypes.MAIN.get(),
-                GearProperties.HARVEST_TIER.get()
+                    PartTypes.MAIN.get(),
+                    GearProperties.HARVEST_TIER.get()
             );
-
+    
             if (harvestTier == null) {
                 return null;
             }
     
             TagKey<Block> incorrectTag = harvestTier.incorrectForTool();
-
+    
             if (incorrectTag == null) {
                 return null;
             }
-
+    
             ResourceLocation tagLocation = incorrectTag.location();
-
+    
             if (!"silentgear".equals(tagLocation.getNamespace())) {
                 return null;
             }
-
-            if (!tagLocation.getPath().startsWith("incorrect_for_")
-                || !tagLocation.getPath().endsWith("_tools")) {
+    
+            String tagPath = tagLocation.getPath();
+    
+            if (!tagPath.startsWith("incorrect_for_") || !tagPath.endsWith("_tools")) {
                 return null;
             }
-
+    
+            String expectedTierName = expectedMaterialPathFromTag(tagLocation);
+    
+            String tierName = harvestTier.name();
+    
+            if (tierName == null || tierName.isBlank()) {
+                tierName = expectedTierName;
+            }
+    
+            tierName = tierName.trim();
+    
+            if (!tierName.equals(expectedTierName)) {
+                return null;
+            }
+    
             String levelHint = harvestTier.levelHint().orElse("").trim();
-
+    
             if (levelHint.isBlank()) {
                 return null;
             }
-
-            String tierName = harvestTier.name().trim();
-
-            if (tierName.isBlank()) {
-                tierName = expectedMaterialPathFromTag(tagLocation);
-            }
-
+    
             int color = safeMaterialColor(instance);
 
-            String expectedName = expectedMaterialPathFromTag(tagLocation);
-            boolean preferredNameForTag = tierName.equals(expectedName);
-
             return new Tier(
-                materialId,
-                incorrectTag,
-                tierName,
-                levelHint,
-                parseLevelHint(levelHint),
-                color,
-                preferredNameForTag
+                    materialId,
+                    incorrectTag,
+                    tierName,
+                    levelHint,
+                    parseLevelHint(levelHint),
+                    color,
+                    true
             );
-        } catch (Exception e) {
+        } catch (Exception ignored) {
             return null;
         }
     }
-
     private static boolean shouldReplaceExistingTier(Tier existing, Tier candidate) {
         if (candidate.preferredNameForTag() && !existing.preferredNameForTag()) {
             return true;
@@ -317,30 +308,35 @@ private record Tier(
         return path;
     }
 
-    private static String prettifyMaterialId(ResourceLocation materialId) {
-        String path = materialId.getPath().replace('_', ' ');
-        String[] words = path.split(" ");
+    private static String prettifyTierName(String tierName) {
+    if (tierName == null || tierName.isBlank()) {
+        return "";
+    }
 
-        StringBuilder result = new StringBuilder();
+    String path = tierName.trim().replace('_', ' ');
+    String[] words = path.split(" ");
 
-        for (String word : words) {
-            if (word.isBlank()) {
-                continue;
-            }
+    StringBuilder result = new StringBuilder();
 
-            if (!result.isEmpty()) {
-                result.append(' ');
-            }
-
-            result.append(Character.toUpperCase(word.charAt(0)));
-
-            if (word.length() > 1) {
-                result.append(word.substring(1));
-            }
+    for (String word : words) {
+        if (word.isBlank()) {
+            continue;
         }
 
-        return result.isEmpty() ? materialId.toString() : result.toString();
+        if (!result.isEmpty()) {
+            result.append(' ');
+        }
+
+        result.append(Character.toUpperCase(word.charAt(0)));
+
+        if (word.length() > 1) {
+            result.append(word.substring(1));
+        }
     }
+
+    return result.isEmpty() ? tierName : result.toString();
+}
+
 
     @Override
     public ResourceLocation getUid() {
