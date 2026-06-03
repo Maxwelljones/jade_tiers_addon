@@ -141,27 +141,30 @@ private record Tier(
     }
 
     private static Tier findRequiredTier(BlockState state, List<Tier> tiers) {
-        boolean blockedByPreviousTier = state.is(tiers.get(0).incorrectTag());
-
-        // If the lowest Silent Gear tier does not block this block, the block is not part
-        // of the custom Silent Gear mining progression chain.
-        if (!blockedByPreviousTier) {
+        if (!state.requiresCorrectToolForDrops()) {
             return null;
         }
-
-        for (int i = 1; i < tiers.size(); i++) {
-            Tier tier = tiers.get(i);
-            boolean blockedByCurrentTier = state.is(tier.incorrectTag());
-
-            if (blockedByPreviousTier && !blockedByCurrentTier) {
+    
+        for (Tier tier : tiers) {
+            if (simulatedSilentGearPickaxeCanMine(state, tier)) {
                 return tier;
             }
-
-            blockedByPreviousTier = blockedByCurrentTier;
         }
-
-        // Still blocked by every known tier. Do not display misleading data.
+    
         return null;
+    }
+    
+    private static boolean simulatedSilentGearPickaxeCanMine(BlockState state, Tier tier) {
+        /*
+         * Silent Gear harvest tiers ultimately behave like:
+         *
+         * - this is a pickaxe-type block
+         * - and this block is NOT inside the tier's incorrect_for_<tier>_tools tag
+         *
+         * This uses live resolved block tags, not raw JSON files.
+         */
+        return state.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_PICKAXE)
+                && !state.is(tier.incorrectTag());
     }
 
     private static List<Tier> buildRuntimeTierList() {
