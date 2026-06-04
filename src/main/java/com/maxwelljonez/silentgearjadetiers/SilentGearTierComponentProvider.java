@@ -190,17 +190,19 @@ public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
         if (!state.requiresCorrectToolForDrops()) {
             return null;
         }
-
+    
         ResourceLocation blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock());
         boolean debugThisBlock = DEBUG_LOGGING && DEBUGGED_BLOCKS.add(blockId);
-
+    
         if (debugThisBlock) {
             LOGGER.info("[SGJT] Testing required Silent Gear tier for block {}", blockId);
         }
-
+    
+        Tier best = null;
+    
         for (Tier tier : tiers) {
-            ToolCheckResult result = toolComponentAllowsDrops(tier.simulatedPickaxe(), state);
-
+            ToolCheckResult result = jadeStyleCanHarvest(tier.simulatedPickaxe(), state);
+    
             if (debugThisBlock) {
                 LOGGER.info(
                         "[SGJT]   tier={} level={} material={} allowed={} reason={} tool={}",
@@ -212,45 +214,33 @@ public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
                         tier.simulatedPickaxe().getHoverName().getString()
                 );
             }
-
-            if (result.allowed()) {
-                if (debugThisBlock) {
-                    LOGGER.info(
-                            "[SGJT]   RESULT block={} requiredTier={} level={}",
-                            blockId,
-                            tier.tierName(),
-                            tier.levelHint()
-                    );
-                }
-
-                return tier;
+    
+            if (!result.allowed()) {
+                continue;
+            }
+    
+            if (best == null || tier.sortLevel() < best.sortLevel()) {
+                best = tier;
             }
         }
-
-        if (debugThisBlock) {
-            LOGGER.info("[SGJT]   RESULT block={} no matching Silent Gear tier found", blockId);
+    
+        if (debugThisBlock && best != null) {
+            LOGGER.info(
+                    "[SGJT]   RESULT block={} requiredLevel={} winningMaterial={} winningTier={}",
+                    blockId,
+                    best.levelHint(),
+                    best.materialId(),
+                    best.tierName()
+            );
         }
-
-        return null;
+    
+        return best;
     }
 
-    /*
-     * This mirrors Jade's harvest tool logic more closely than ItemStack.isCorrectToolForDrops.
-     *
-     * We intentionally inspect DataComponents.TOOL rules directly:
-     * - first matching deniesDrops rule => false
-     * - first matching minesAndDrops rule => true
-     *
-     * We do NOT fall back to ItemStack.isCorrectToolForDrops here, because that can hide
-     * whether Silent Gear's generated Tool component is actually correct.
-     */
-    private static ToolCheckResult toolComponentAllowsDrops(ItemStack stack, BlockState state) {
-        Tool tool = stack.get(DataComponents.TOOL);
+    private static ToolCheckResult jadeStyleCanHarvest(ItemStack stack, BlockState state) {
+    Tool tool = stack.get(DataComponents.TOOL);
 
-        if (tool == null) {
-            return new ToolCheckResult(false, "no_tool_component");
-        }
-
+    if (tool != null) {
         int index = 0;
 
         for (Tool.Rule rule : tool.rules()) {
@@ -259,15 +249,24 @@ public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
 
                 return new ToolCheckResult(
                         allowed,
-                        allowed ? "rule_" + index + "_allows_drops" : "rule_" + index + "_denies_drops"
+                        allowed ? "tool_rule_" + index + "_allows_drops" : "tool_rule_" + index + "_denies_drops"
                 );
             }
 
             index++;
         }
 
-        return new ToolCheckResult(false, "no_matching_correct_for_drops_rule");
+        if (tool.getMiningSpeed(state) > tool.defaultMiningSpeed()) {
+            return new ToolCheckResult(true, "tool_component_mining_speed");
+        }
     }
+
+    if (stack.isCorrectToolForDrops(state)) {
+        return new ToolCheckResult(true, "stack_is_correct_tool_for_drops");
+    }
+
+    return new ToolCheckResult(false, "not_correct_tool");
+}
 
     private static List<Tier> buildRuntimeTierList() {
         List<Tier> tiers = new ArrayList<>();
