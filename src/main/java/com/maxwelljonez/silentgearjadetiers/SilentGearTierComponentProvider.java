@@ -58,7 +58,7 @@ public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
 
     private static final ResourceLocation PICKAXE_CROSS_TEXTURE = ResourceLocation.fromNamespaceAndPath(
             "silentgear_jade_tiers",
-            "textures/gui/generic_pickaxe_cross.png"
+            "textures/gui/sprites/generic_pickaxe_cross.png"
     );
 
     private static final Set<ResourceLocation> DEBUGGED_BLOCKS = new HashSet<>();
@@ -153,11 +153,10 @@ public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
         List<IElement> line = new ArrayList<>();
 
         if (SilentGearJadeTiersConfig.SHOW_CROSSED_PICKAXE_ICON.get()) {
-            line.add(
-                    IElementHelper.get()
-                            .sprite(PICKAXE_CROSS_TEXTURE, 0, 0, 16, 16, 16, 16)
-                            .size(new Vec2(8, 8))
-                            .message(null)
+               line.add(
+            IElementHelper.get()
+                    .sprite(PICKAXE_CROSS_TEXTURE, 8, 8)
+                    .message(null)
             );
         }
 
