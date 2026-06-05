@@ -49,12 +49,9 @@ public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    /*
-     * Temporary debug logging.
-     * Keep this true for the next test.
-     * After we confirm the logic, set it to false.
-     */
-    private static final boolean DEBUG_LOGGING = true;
+    private static boolean debugLogging() {
+        return SilentGearJadeTiersConfig.debugLogging.get();
+    }
 
     private static final ResourceLocation PICKAXE_CROSS_TEXTURE = ResourceLocation.fromNamespaceAndPath(
             "silentgear_jade_tiers",
