@@ -58,7 +58,7 @@ public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
 
     private static final ResourceLocation PICKAXE_CROSS_TEXTURE = ResourceLocation.fromNamespaceAndPath(
             "silentgear_jade_tiers",
-            "textures/gui/sprites/generic_pickaxe_cross.png"
+            "generic_pickaxe_cross"
     );
 
     private static final Set<ResourceLocation> DEBUGGED_BLOCKS = new HashSet<>();
