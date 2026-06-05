@@ -14,11 +14,13 @@ public final class SilentGearJadeTiersConfig {
     public static final ModConfigSpec.BooleanValue SHOW_IF_HOLDING_WRONG_TOOL;
     public static final ModConfigSpec.BooleanValue SHOW_IF_HOLDING_CORRECT_TOOL;
 
+    public static final ModConfigSpec.BooleanValue DEBUG_LOGGING;
+
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 
         builder.push("display");
-        
+
         builder.comment(
                 "Silent Gear Jade Tiers reads live Silent Gear material data.",
                 "For correct display, every progression material used by the pack should define a harvest_tier with:",
@@ -27,13 +29,13 @@ public final class SilentGearJadeTiersConfig {
                 "- incorrect_blocks_for_tool",
                 "Non-progression materials with valid harvest tiers may also be detected if they can really mine a block."
         );
-        
+
         SHOW_REQUIRED_TIER = builder
                 .comment("Show the Silent Gear required mining tier line in Jade.")
                 .define("show_required_tier", true);
 
         SHOW_CROSSED_PICKAXE_ICON = builder
-                .comment("Show a small crossed pickaxe text marker before the required tier line. The PNG icon renderer will be added later.")
+                .comment("Show a small crossed pickaxe icon before the required tier line.")
                 .define("show_crossed_pickaxe_icon", true);
 
         SHOW_NUMERIC_LEVEL = builder
@@ -59,6 +61,18 @@ public final class SilentGearJadeTiersConfig {
         SHOW_IF_HOLDING_CORRECT_TOOL = builder
                 .comment("Show the required tier line when the held item can harvest the block.")
                 .define("show_if_holding_correct_tool", true);
+
+        builder.pop();
+
+        builder.push("debug");
+
+        DEBUG_LOGGING = builder
+                .comment(
+                        "Enable verbose debug logging for Silent Gear Jade Tiers.",
+                        "This logs the runtime Silent Gear tier list and per-block mining checks to latest.log.",
+                        "Useful for modpack development. Keep disabled for normal gameplay and public releases."
+                )
+                .define("debug_logging", false);
 
         builder.pop();
 
