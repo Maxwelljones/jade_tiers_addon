@@ -39,7 +39,6 @@ import snownee.jade.api.config.IPluginConfig;
 import snownee.jade.api.ui.IElement;
 import snownee.jade.api.ui.IElementHelper;
 import snownee.jade.api.ui.Element;
-import snownee.jade.api.ui.IDisplayHelper;
 
 import java.util.ArrayList;
 import java.util.Comparator;
