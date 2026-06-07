@@ -371,31 +371,13 @@ public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
             return null;
         }
 
-        String expectedTierName = expectedTierNameFromIncorrectTag(incorrectTagId);
         String tierName = harvestTier.name();
-
+        
         if (tierName == null || tierName.isBlank()) {
-            return null;
+            tierName = materialId.getPath();
         }
-
+        
         tierName = tierName.trim();
-
-        /*
-         * Critical filter:
-         * Only keep the actual progression material for a tier.
-         *
-         * This excludes Silent Gear side materials like:
-         * - basalt
-         * - blackstone
-         * - terracotta
-         * - amethyst
-         * - lapis_lazuli
-         *
-         * Those can have harvest tiers, but they are not our displayed progression tiers.
-         */
-        if (!normalizeTierKey(tierName).equals(expectedTierName)) {
-            return null;
-        }
 
         String levelHint = harvestTier.levelHint().orElse("").trim();
 
@@ -545,31 +527,6 @@ public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
         return result.isEmpty() ? tierName : result.toString();
     }
 
-        private static String expectedTierNameFromIncorrectTag(ResourceLocation tagId) {
-        String path = tagId.getPath();
-    
-        if (path.startsWith("incorrect_for_")) {
-            path = path.substring("incorrect_for_".length());
-        }
-    
-        if (path.endsWith("_tools")) {
-            path = path.substring(0, path.length() - "_tools".length());
-        }
-    
-        return normalizeTierKey(path);
-    }
-    
-    private static String normalizeTierKey(String value) {
-        if (value == null) {
-            return "";
-        }
-    
-        return value
-                .trim()
-                .toLowerCase(java.util.Locale.ROOT)
-                .replace(' ', '_')
-                .replace('-', '_');
-    }
     private static final class TierPickaxeElement extends Element {
     private static final int DISPLAY_SIZE = 16;
 
