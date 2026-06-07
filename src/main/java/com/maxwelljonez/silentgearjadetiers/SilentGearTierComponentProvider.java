@@ -425,7 +425,7 @@ public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
                 simulatedPickaxe
         );
     } catch (Exception e) {
-        if (debugLogging) {
+        if (debugLogging()) {
             LOGGER.warn("[SGJT] Failed to create tier from material {}", materialId, e);
         }
 
@@ -481,7 +481,7 @@ public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
 
             return stack;
         } catch (Exception e) {
-            if (debugLogging) {
+            if (debugLogging()) {
                 LOGGER.warn("[SGJT] Failed to create simulated Silent Gear pickaxe for material {}", mainMaterialId, e);
             }
 
