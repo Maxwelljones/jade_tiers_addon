@@ -307,7 +307,7 @@ public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
                         .thenComparing(tier -> tier.materialId().toString())
         );
 
-        if (debugLogging()) && !loggedTierList) {
+        if (debugLogging() && !loggedTierList) {
             loggedTierList = true;
 
             LOGGER.info("[SGJT] Runtime Silent Gear tier list: {} entries", tiers.size());
