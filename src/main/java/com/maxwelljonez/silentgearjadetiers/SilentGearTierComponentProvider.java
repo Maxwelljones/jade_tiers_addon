@@ -1,6 +1,7 @@
 package com.maxwelljonez.silentgearjadetiers;
 
 import com.mojang.logging.LogUtils;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -13,6 +14,7 @@ import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec2;
+import net.minecraft.client.gui.GuiGraphics;
 import net.silentchaos512.gear.api.item.GearItem;
 import net.silentchaos512.gear.api.item.GearType;
 import net.silentchaos512.gear.api.material.Material;
@@ -52,6 +54,11 @@ public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
     private static boolean debugLogging() {
         return SilentGearJadeTiersConfig.debugLogging.get();
     }
+
+    private static final ResourceLocation PICKAXE_TEXTURE = ResourceLocation.fromNamespaceAndPath(
+            "silentgear_jade_tiers",
+            "generic_pickaxe"
+    );
 
     private static final ResourceLocation PICKAXE_CROSS_TEXTURE = ResourceLocation.fromNamespaceAndPath(
             "silentgear_jade_tiers",
@@ -150,16 +157,19 @@ public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
         List<IElement> line = new ArrayList<>();
 
         if (SilentGearJadeTiersConfig.SHOW_CROSSED_PICKAXE_ICON.get()) {
-               line.add(
-            IElementHelper.get()
-                    .sprite(PICKAXE_CROSS_TEXTURE, 8, 8)
-                    .message(null)
+            boolean heldCanMine = heldItemCanMine(accessor, state);
+        
+            line.add(
+                    new TierPickaxeElement(
+                            required.color(),
+                            !heldCanMine
+                    ).message(null)
             );
         }
 
-        line.add(IElementHelper.get().text(text).message(null));
-
-        tooltip.add(line);
+    line.add(IElementHelper.get().text(text).message(null));
+    
+    tooltip.add(line);
     }
 
     private static boolean shouldShowForHeldItem(BlockAccessor accessor, BlockState state) {
@@ -173,7 +183,7 @@ public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
             return SilentGearJadeTiersConfig.SHOW_IF_HOLDING_NO_TOOL.get();
         }
 
-        boolean correctTool = held.isCorrectToolForDrops(state);
+        boolean correctTool = jadeStyleCanHarvest(held, state).allowed();
 
         if (correctTool) {
             return SilentGearJadeTiersConfig.SHOW_IF_HOLDING_CORRECT_TOOL.get();
@@ -181,6 +191,19 @@ public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
 
         return SilentGearJadeTiersConfig.SHOW_IF_HOLDING_WRONG_TOOL.get();
     }
+    private static boolean heldItemCanMine(BlockAccessor accessor, BlockState state) {
+    if (accessor.getPlayer() == null) {
+        return false;
+    }
+
+    ItemStack held = accessor.getPlayer().getMainHandItem();
+
+    if (held.isEmpty()) {
+        return false;
+    }
+
+    return jadeStyleCanHarvest(held, state).allowed();
+}
 
     private static Tier findRequiredTier(BlockState state, List<Tier> tiers) {
         if (!state.requiresCorrectToolForDrops()) {
@@ -546,7 +569,68 @@ public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
                 .replace(' ', '_')
                 .replace('-', '_');
     }
+    private static final class TierPickaxeElement extends Element {
+    private static final int SOURCE_SIZE = 16;
+    private static final int DISPLAY_SIZE = 8;
 
+    private final int color;
+    private final boolean crossed;
+
+    private TierPickaxeElement(int color, boolean crossed) {
+        this.color = color & 0xFFFFFF;
+        this.crossed = crossed;
+    }
+
+    @Override
+    public Vec2 getSize() {
+        return new Vec2(DISPLAY_SIZE, DISPLAY_SIZE);
+    }
+
+    @Override
+    public void render(GuiGraphics guiGraphics, float x, float y, float maxX, float maxY) {
+        int drawX = Math.round(x);
+        int drawY = Math.round(y);
+        int width = Math.round(getCachedSize().x);
+        int height = Math.round(getCachedSize().y);
+
+        float red = ((color >> 16) & 0xFF) / 255.0F;
+        float green = ((color >> 8) & 0xFF) / 255.0F;
+        float blue = (color & 0xFF) / 255.0F;
+
+        RenderSystem.setShaderColor(red, green, blue, 1.0F);
+
+        IDisplayHelper.get().blitSprite(
+                guiGraphics,
+                PICKAXE_TEXTURE,
+                SOURCE_SIZE,
+                SOURCE_SIZE,
+                0,
+                0,
+                drawX,
+                drawY,
+                width,
+                height
+        );
+
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+
+        if (crossed) {
+            IDisplayHelper.get().blitSprite(
+                    guiGraphics,
+                    PICKAXE_CROSS_TEXTURE,
+                    SOURCE_SIZE,
+                    SOURCE_SIZE,
+                    0,
+                    0,
+                    drawX,
+                    drawY,
+                    width,
+                    height
+            );
+        }
+    }
+}
+    
     @Override
     public ResourceLocation getUid() {
         return SilentGearJadePlugin.REQUIRED_TIER;
