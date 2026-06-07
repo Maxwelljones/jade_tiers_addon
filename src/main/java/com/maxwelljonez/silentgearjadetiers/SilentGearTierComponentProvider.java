@@ -528,7 +528,7 @@ public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
     }
 
     private static final class TierPickaxeElement extends Element {
-    private static final int DISPLAY_SIZE = 12;
+    private static final int DISPLAY_SIZE = 8;
 
     private final int color;
     private final boolean crossed;
