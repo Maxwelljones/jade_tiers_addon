@@ -527,8 +527,9 @@ public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
         return result.isEmpty() ? tierName : result.toString();
     }
 
-    private static final class TierPickaxeElement extends Element {
+private static final class TierPickaxeElement extends Element {
     private static final int DISPLAY_SIZE = 8;
+    private static final int Y_OFFSET = 1;
 
     private final int color;
     private final boolean crossed;
@@ -540,13 +541,13 @@ public enum SilentGearTierComponentProvider implements IBlockComponentProvider {
 
     @Override
     public Vec2 getSize() {
-        return new Vec2(DISPLAY_SIZE, DISPLAY_SIZE);
+        return new Vec2(DISPLAY_SIZE + 3, DISPLAY_SIZE);
     }
 
     @Override
     public void render(GuiGraphics guiGraphics, float x, float y, float maxX, float maxY) {
         int drawX = Math.round(x);
-        int drawY = Math.round(y);
+        int drawY = Math.round(y) + Y_OFFSET;
 
         float red = ((color >> 16) & 0xFF) / 255.0F;
         float green = ((color >> 8) & 0xFF) / 255.0F;
